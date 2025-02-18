@@ -10,10 +10,10 @@ type listener struct {
 	sa *syscall.SockaddrInet4
 }
 
-func NewListener(ip []byte, port int) (*listener, error) {
+func NewListener(ip []byte, port int, flags int) (*listener, error) {
 	syscall.ForkLock.Lock()
 	
-	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
+	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM | flags, syscall.IPPROTO_TCP)
 	if err != nil {
 		return nil, os.NewSyscallError("socket", err)
 	}
@@ -43,7 +43,7 @@ func NewListener(ip []byte, port int) (*listener, error) {
 
 func (so *listener) Accept(flags int) (*conn, error) {
 	nfd, sa, err := syscall.Accept4(so.fd, flags)
-	if err != nil {
+	if err != nil && err != syscall.EAGAIN {
 		return nil, os.NewSyscallError("accept", err)
 	}
 
