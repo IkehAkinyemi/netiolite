@@ -11,10 +11,10 @@ type poll struct {
 	evfds []int32
 }
 
-func newPoll() *poll {
+func newPoll() (*poll, error) {
 	fd, err := syscall.EpollCreate1(0)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	p := new(poll)
@@ -23,10 +23,10 @@ func newPoll() *poll {
 	p.events = make([]syscall.EpollEvent, 64)
 	p.evfds = make([]int32, len(p.events))
 
-	return p
+	return p, nil
 }
 
-func (p *poll) wait(msec time.Duration) []int32 {
+func (p *poll) wait(msec time.Duration) ([]int32, error) {
 	var err error
 	var n int
 	if msec >= 0 {
@@ -36,7 +36,7 @@ func (p *poll) wait(msec time.Duration) []int32 {
 	}
 
 	if err != nil && err != syscall.EINTR {
-		panic(err)
+		return nil, err
 	}
 
 	p.evfds = p.evfds[:0]
@@ -44,29 +44,35 @@ func (p *poll) wait(msec time.Duration) []int32 {
 		p.evfds = append(p.evfds, p.events[i].Fd)
 	}
 
-	return p.evfds
+	return p.evfds, nil
 }
 
-func (p *poll) addEvents(fd int32, flags int) {
+func (p *poll) addEvents(fd int32, flags int) error {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_ADD, int(fd), &syscall.EpollEvent{
 		Fd: fd,
 		Events: uint32(flags),
 	}); err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
-func (p *poll) modEvents(fd int32, flags int) {
+func (p *poll) modEvents(fd int32, flags int) error {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_MOD, int(fd), &syscall.EpollEvent{
 		Fd: fd,
 		Events: uint32(flags),
 	}); err != nil {
-		panic(err)
+	return err
 	}
+
+	return nil
 }
 
-func (p *poll) removeFd(fd int32) {
+func (p *poll) removeFd(fd int32) error {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_DEL, int(fd), nil); err != nil {
-		panic(err)
+		return err
 	}
+	
+	return nil
 }
