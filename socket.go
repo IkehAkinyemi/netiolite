@@ -1,4 +1,4 @@
-package netiolite
+package main
 
 import (
 	"os"

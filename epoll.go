@@ -1,8 +1,16 @@
-package netiolite
+package main
 
 import (
+	"fmt"
+	"net"
+	"sync"
 	"syscall"
 	"time"
+)
+
+const (
+	EPOLLET        = 0x80000000
+	EPOLLEXCLUSIVE = 0x10000000
 )
 
 type poll struct {
@@ -73,6 +81,51 @@ func (p *poll) removeFd(fd int32) error {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_DEL, int(fd), nil); err != nil {
 		return err
 	}
-	
+
 	return nil
+}
+
+func main() {
+	ln, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		panic(err)
+	}
+	defer ln.Close()
+
+	file, err := ln.(*net.TCPListener).File()
+	if err != nil {
+		panic(err)
+	}
+
+	epoll, err := newPoll()
+	if err != nil {
+		panic(err)
+	}
+
+	err = epoll.addEvents(int32(file.Fd()), syscall.EPOLLIN|EPOLLEXCLUSIVE)
+	if err != nil {
+		panic(err)
+	}
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func(p *poll) {
+			accept(p)
+			wg.Done()
+		}(epoll)
+	}
+
+	wg.Wait()
+}
+
+func accept(p *poll) {
+	fds, err := p.wait(-1)
+	if err != nil {
+		fmt.Printf("panic\n")
+		panic(err)
+	}
+
+	fmt.Println(fds)
 }
