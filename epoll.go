@@ -19,8 +19,8 @@ type poll struct {
 	evfds []int32
 }
 
-func newPoll() (*poll, error) {
-	fd, err := syscall.EpollCreate1(0)
+func newPoll(flags int) (*poll, error) {
+	fd, err := syscall.EpollCreate1(flags)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func main() {
 		panic(err)
 	}
 
-	epoll, err := newPoll()
+	epoll, err := newPoll(0)
 	if err != nil {
 		panic(err)
 	}
@@ -109,23 +109,34 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 5; i++ {
 		wg.Add(1)
-		go func(p *poll) {
-			accept(p)
+		go func(p *poll, n int) {
+			accept(p, i)
 			wg.Done()
-		}(epoll)
+		}(epoll, i)
 	}
 
 	wg.Wait()
+
+
+		// accept(epoll, 0)
+		// fmt.Println("First happened")
+		// nfd, sa, err := syscall.Accept(int(file.Fd()))
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// fmt.Println(nfd, sa)
+		// epoll.modEvents(int32(file.Fd()), syscall.EPOLLIN)
+		// accept(epoll, 0)
 }
 
-func accept(p *poll) {
+func accept(p *poll, n int) {
 	fds, err := p.wait(-1)
 	if err != nil {
 		fmt.Printf("panic\n")
 		panic(err)
 	}
 
-	fmt.Println(fds)
+	fmt.Println(n, fds)
 }

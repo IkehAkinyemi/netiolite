@@ -41,8 +41,8 @@ func NewListener(ip []byte, port int, flags int) (*listener, error) {
 	return &listener{fd, sa}, nil
 }
 
-func (so *listener) Accept(flags int) (*conn, error) {
-	nfd, sa, err := syscall.Accept4(so.fd, flags)
+func (ln *listener) Accept(flags int) (*conn, error) {
+	nfd, sa, err := syscall.Accept4(ln.fd, flags)
 	if err != nil && err != syscall.EAGAIN {
 		return nil, os.NewSyscallError("accept", err)
 	}
