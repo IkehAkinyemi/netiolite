@@ -1,4 +1,4 @@
-package main
+package netiolite
 
 import (
 	"fmt"
@@ -118,17 +118,6 @@ func main() {
 	}
 
 	wg.Wait()
-
-
-		// accept(epoll, 0)
-		// fmt.Println("First happened")
-		// nfd, sa, err := syscall.Accept(int(file.Fd()))
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// fmt.Println(nfd, sa)
-		// epoll.modEvents(int32(file.Fd()), syscall.EPOLLIN)
-		// accept(epoll, 0)
 }
 
 func accept(p *poll, n int) {
