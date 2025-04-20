@@ -1,2 +1,3 @@
-package netiolite
+// +build linux
 
+package netiolite
